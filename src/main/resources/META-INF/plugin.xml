@@ -1,0 +1,27 @@
+<idea-plugin require-restart="true">
+    <id>com.zhoucb.searchenhance</id>
+    <name>Search Enhance</name>
+    <version>1.0.0</version>
+    <vendor>zhoucb50741</vendor>
+    <description><![CDATA[
+        <p>用界面组合“且、或、不包含”等同行搜索条件，无需手写正则表达式。</p>
+        <p>支持完整词、顺序、行首行尾、数字、赋值、多值、方法调用及字符串场景。</p>
+        <p>复用 Ctrl+F / Ctrl+Shift+F 及用户现有快捷键，继续使用 IDEA 原生搜索条、
+        Find in Files 范围与文件过滤、Find 结果窗口和 F3 / Shift+F3 导航。</p>
+        <p>针对 IntelliJ IDEA 2023.3.8（233.15619.7）开发，兼容范围限定为 233.*。</p>
+    ]]></description>
+    <change-notes><![CDATA[1.0.0：条件分组、14 种搜索场景、原生搜索集成和项目内草稿记忆。]]></change-notes>
+    <idea-version since-build="233.15619.7" until-build="233.*"/>
+    <depends>com.intellij.modules.platform</depends>
+    <depends>com.intellij.modules.lang</depends>
+    <actions>
+        <action id="Find" class="com.zhoucb.searchenhance.action.CurrentFileSearchAction"
+                text="查找（增强条件）" description="组合条件后在当前文件搜索" overrides="true"/>
+        <action id="FindInPath" class="com.zhoucb.searchenhance.action.ProjectSearchAction"
+                text="在文件中查找（增强条件）" description="组合条件后使用原生 Find in Files" overrides="true"/>
+        <action id="SearchEnhance.EditConditions" class="com.zhoucb.searchenhance.action.EditConditionsAction"
+                text="搜索增强：编辑条件…" description="打开搜索条件组合界面">
+            <add-to-group group-id="ToolsMenu" anchor="last"/>
+        </action>
+    </actions>
+</idea-plugin>

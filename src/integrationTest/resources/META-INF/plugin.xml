@@ -1,0 +1,13 @@
+<idea-plugin>
+    <id>com.zhoucb.searchenhance.smoke</id>
+    <name>Search Enhance Integration Smoke Test</name>
+    <version>1.0.0</version>
+    <vendor>zhoucb50741</vendor>
+    <description>Test-only application starter; never included in the production distribution.</description>
+    <idea-version since-build="233.15619.7" until-build="233.*"/>
+    <depends>com.zhoucb.searchenhance</depends>
+    <extensions defaultExtensionNs="com.intellij">
+        <appStarter id="searchEnhanceSmoke"
+                    implementation="com.zhoucb.searchenhance.smoke.SearchEnhanceSmokeStarter"/>
+    </extensions>
+</idea-plugin>
