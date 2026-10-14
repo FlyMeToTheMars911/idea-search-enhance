@@ -43,8 +43,14 @@ public final class EditConditionsAction extends DumbAwareAction {
             editor = FileEditorManager.getInstance(project).getSelectedTextEditor();
         }
         boolean projectSearch = !NativeActionSupport.isMainEditor(editor);
-        DataContext context = SimpleDataContext.getSimpleContext(CommonDataKeys.EDITOR, editor,
-                event.getDataContext());
+        SimpleDataContext.Builder contextBuilder = SimpleDataContext.builder()
+                .setParent(event.getDataContext());
+        if (editor == null) {
+            contextBuilder.addNull(CommonDataKeys.EDITOR);
+        } else {
+            contextBuilder.add(CommonDataKeys.EDITOR, editor);
+        }
+        DataContext context = contextBuilder.build();
         LOG.info("Opening enhanced search conditions from the standalone action");
         new SearchEnhanceDialog(project, editor, projectSearch, context, () -> {
             if (projectSearch) {

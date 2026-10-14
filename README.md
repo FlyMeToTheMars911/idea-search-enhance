@@ -4,7 +4,7 @@
 
 ## 安装
 
-1. 构建后取得 `build/distributions/search-enhance-1.0.0.zip`，不需要解压。
+1. 构建后取得 `build/distributions/search-enhance-1.0.1.zip`，不需要解压。
 2. IDEA：`Settings → Plugins → 齿轮 → Install Plugin from Disk…`，选择 ZIP。
 3. 重启 IDEA。
 
@@ -12,14 +12,17 @@
 
 ## 使用
 
-- **Ctrl+F**：组合条件，在当前文件的原生查找条中搜索。
+- **Ctrl+F**：保持 IDEA 原生当前文件查找，直接打开原生查找条。
 - **Ctrl+Shift+F**：组合条件后进入原生 **Find in Files**，继续选择 Project、Module、Directory、Scope、File mask，回车打开原生 **Find** 结果窗口。
 - **F3 / Shift+F3**：保持 IDEA 原生的下一处／上一处导航。
 - 条件编辑器内 **Ctrl+Enter** 确认搜索，多值输入框中 Enter 换行。
+- `Tools → 搜索增强：当前文件条件搜索…`：在当前文件组合条件，不绑定 Ctrl+F。
 - `Tools → 搜索增强：编辑条件…`：有主编辑器时编辑当前文件条件，否则编辑项目搜索条件。
 - **普通搜索…**：临时进入原来普通的 IDEA 查找，不需要卸载插件。
 
-插件覆盖原生 `Find`、`FindInPath` 动作，**沿用这两个动作已有的快捷键，包括用户自定义 Keymap**；没有另注册冲突的快捷键。控制台、单行输入框等不适用的上下文继续执行原生动作。卸载或禁用插件并重启后恢复原生动作。
+插件仅覆盖原生 `FindInPath` 动作，沿用其已有快捷键，包括用户自定义 Keymap。`Find` 动作及 Ctrl+F 完全交给 IDEA。控制台、单行输入框等不适用的上下文继续执行原生动作。卸载或禁用插件并重启后恢复所有原生动作。
+
+1.0.1 修复了“普通搜索…”可能执行 IDEA 延迟加载动作占位对象而不打开窗口的问题；升级时在 Plugins 中从磁盘安装新版 ZIP 并重启。修复依据和变更清单见 [修复记录](docs/FIX_1.0.1.md)。
 
 ### 组合规则
 
@@ -93,7 +96,7 @@
 - 方法调用和双引号字符串模板属于文本模式，不能替代 Java PSI 的语义查找；方法名后接 `(` 的声明形式也可能命中。
 - 仅排除条件允许匹配空行；全部空白条件不能执行搜索。
 - 原生 Find in Files 预览数量、超大文件处理及搜索范围限制沿用 IDEA 行为。
-- `ActionManagerImpl.getBaseAction` 和动作覆盖机制按 233 平台核实；不宣称兼容未验证的其他 IDEA 大版本。
+- `ActionManagerImpl.getBaseAction`、延迟动作实例化和动作覆盖机制按 233 平台核实；不宣称兼容未验证的其他 IDEA 大版本。
 
 实现参考：[JetBrains 233 原生项目搜索入口](https://github.com/JetBrains/intellij-community/blob/idea/233.15619.7/platform/lang-impl/src/com/intellij/find/findInProject/FindInProjectManager.java)、[233 原生编辑器查找条](https://github.com/JetBrains/intellij-community/blob/idea/233.15619.7/platform/lang-impl/src/com/intellij/find/EditorSearchSession.java)。
 

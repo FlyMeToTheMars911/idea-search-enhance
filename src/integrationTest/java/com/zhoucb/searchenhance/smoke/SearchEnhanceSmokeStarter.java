@@ -4,7 +4,9 @@ import com.intellij.find.EditorSearchSession;
 import com.intellij.find.FindManager;
 import com.intellij.find.FindModel;
 import com.intellij.find.FindResult;
+import com.intellij.ide.plugins.PluginManagerCore;
 import com.intellij.openapi.actionSystem.ActionManager;
+import com.intellij.openapi.actionSystem.ActionStubBase;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.actionSystem.DataContext;
@@ -19,6 +21,8 @@ import com.intellij.openapi.application.PathManager;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.EditorFactory;
 import com.intellij.openapi.editor.EditorKind;
+import com.intellij.openapi.editor.actions.IncrementalFindAction;
+import com.intellij.openapi.extensions.PluginId;
 import com.intellij.openapi.keymap.Keymap;
 import com.intellij.openapi.keymap.KeymapManager;
 import com.intellij.openapi.project.Project;
@@ -102,11 +106,14 @@ public final class SearchEnhanceSmokeStarter implements ApplicationStarter {
         report.add("System: " + PathManager.getSystemPath());
         report.add("Plugins: " + PathManager.getPluginsPath());
         report.add("Log: " + PathManager.getLogPath());
-        report.add("UI dialogs are initialized and painted offscreen; no modal dialog is shown.");
+        report.add("Scenario editors are painted offscreen; ordinary-search regression checks also show"
+                + " the real modal dialog and click its actual button in a test-owned frame."
+                + " The test project has a registered native IDEA frame without running normal project startup.");
         report.add("");
         try {
             Files.createDirectories(reportDirectory);
             application.invokeAndWait(() -> runChecks(reportDirectory, report, failures));
+            OrdinarySearchUiRegression.run(reportDirectory, report, failures);
         } catch (Throwable failure) {
             failures.add(failure);
         }
@@ -158,12 +165,20 @@ public final class SearchEnhanceSmokeStarter implements ApplicationStarter {
         ActionManager manager = ActionManager.getInstance();
         AnAction find = manager.getAction("Find");
         AnAction findInPath = manager.getAction("FindInPath");
-        require(find instanceof CurrentFileSearchAction, "Find override was not registered: " + find);
+        if (isLegacyBaseline()) {
+            require(find instanceof CurrentFileSearchAction, "Legacy Find override missing: " + find);
+            report.add("Baseline package 1.0.0: exercising its legacy Find override.");
+        } else {
+            require(find instanceof IncrementalFindAction && !(find instanceof CurrentFileSearchAction),
+                    "Ctrl+F Find must remain the native IncrementalFindAction: " + find);
+            require(manager.getAction("SearchEnhance.FindInCurrentFile") instanceof CurrentFileSearchAction,
+                    "Standalone current-file enhanced action was not registered");
+        }
         require(findInPath instanceof ProjectSearchAction, "FindInPath override was not registered: " + findInPath);
-        require(NativeActionSupport.original((CurrentFileSearchAction) find, false) != find,
-                "Find must retain an independent native action");
         require(NativeActionSupport.original((ProjectSearchAction) findInPath, true) != findInPath,
                 "FindInPath must retain an independent native action");
+        require(!(NativeActionSupport.original((ProjectSearchAction) findInPath, true) instanceof ActionStubBase),
+                "FindInPath native fallback must be executable, not an uninitialized ActionStubBase");
         Keymap keymap = KeymapManager.getInstance().getKeymap(KeymapManager.DEFAULT_IDEA_KEYMAP);
         require(keymap != null, "The IDEA default keymap did not load");
         require(hasShortcut(keymap, "Find", "ctrl F"), "Default Find Ctrl+F binding missing");
@@ -173,6 +188,12 @@ public final class SearchEnhanceSmokeStarter implements ApplicationStarter {
         report.add("FindInPath shortcuts: " + Arrays.toString(keymap.getShortcuts("FindInPath")));
         require(manager.getAction("FindNext") != null && manager.getAction("FindPrevious") != null,
                 "Original next / previous actions did not load");
+    }
+
+    /** Params: none. Returns: whether this run intentionally exercises the known 1.0.0 baseline. */
+    static boolean isLegacyBaseline() {
+        return "1.0.0".equals(PluginManagerCore.getPlugin(
+                PluginId.getId("com.zhoucb.searchenhance")).getVersion());
     }
 
     /** Params: keymap, actionId, stroke - expected mapping. Returns: whether it exists. */

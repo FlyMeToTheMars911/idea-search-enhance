@@ -14,7 +14,7 @@ import com.zhoucb.searchenhance.ui.SearchEnhanceDialog;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * 在原生 Find 动作及其现有快捷键下打开当前文件条件组合器。
+ * 为当前文件提供独立条件搜索入口，不覆盖原生 Find 或 Ctrl+F。
  *
  * @author zhoucb50741
  * @date 2026-10-14
@@ -24,7 +24,7 @@ public final class CurrentFileSearchAction extends DumbAwareAction implements Ov
     private static final Logger LOG = Logger.getInstance(CurrentFileSearchAction.class);
 
     /**
-     * 打开组合器；非主编辑器上下文继续执行原生查找。
+     * 从独立菜单入口打开组合器；非主编辑器上下文继续执行原生查找。
      *
      * @param event 原生动作事件
      * @return 无

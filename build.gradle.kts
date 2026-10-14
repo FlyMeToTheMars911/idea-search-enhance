@@ -3,7 +3,7 @@ plugins {
 }
 
 group = "com.zhoucb.searchenhance"
-version = "1.0.0"
+version = "1.0.1"
 
 // Offline SDK dependency: no Gradle IntelliJ plugin and no IDE downloads.
 // Use Gradle 7.3+ on Java 17, or scripts/build.ps1 without Gradle.

@@ -4,7 +4,7 @@
 | --- | --- |
 | 数据表 | 无 |
 | 业务参数 | 无服务端业务参数；界面支持大小写、逐条件完整词选项 |
-| 接口定义 | 无 HTTP、RPC 或外部接口；插件覆盖 IDEA 动作 Find、FindInPath，新增 Tools 菜单动作 SearchEnhance.EditConditions |
+| 接口定义 | 无 HTTP、RPC 或外部接口；仅覆盖 IDEA 动作 FindInPath；保留原生 Find / Ctrl+F；Tools 菜单提供 SearchEnhance.FindInCurrentFile 和 SearchEnhance.EditConditions |
 | 数据字典 | 无数据库字典；新增本地 MatchType 枚举，14 种界面搜索场景 |
 | 查询模板 | 新增字面文本、任意一个、顺序、行首行尾、紧邻、仅空白、赋值/比较、多值、数字、前缀、调用形式、字符串、排除成员访问模板 |
 | DAO 层 | 无 |
@@ -21,3 +21,5 @@
 ## Git 提交范围
 
 仅提交本插件源代码、构建脚本、测试和说明。忽略 work/、build/、.gradle/、.idea/、本机设置和生成安装包；安装包作为单独交付物。
+
+1.0.1 的专门修复、日志依据和本次分类见 [FIX_1.0.1.md](FIX_1.0.1.md)。

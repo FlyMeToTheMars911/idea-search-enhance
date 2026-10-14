@@ -29,7 +29,7 @@ if ($product.buildNumber -ne '233.15619.7') {
     throw "This integration starter targets IDEA build 233.15619.7; found $($product.buildNumber)."
 }
 if ([string]::IsNullOrWhiteSpace($PluginZip)) {
-    $PluginZip = Join-Path $projectRoot 'build\distributions\search-enhance-1.0.0.zip'
+    $PluginZip = Join-Path $projectRoot 'build\distributions\search-enhance-1.0.1.zip'
 }
 $PluginZip = (Resolve-Path -LiteralPath $PluginZip).ProviderPath
 $javac = Join-Path $IdeaHome 'jbr\bin\javac.exe'

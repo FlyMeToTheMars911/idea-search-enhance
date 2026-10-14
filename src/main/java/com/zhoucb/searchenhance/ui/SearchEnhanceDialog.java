@@ -2,6 +2,7 @@ package com.zhoucb.searchenhance.ui;
 
 import com.intellij.openapi.actionSystem.DataContext;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.project.Project;
@@ -164,7 +165,7 @@ public final class SearchEnhanceDialog extends DialogWrapper {
         root.add(tabs, BorderLayout.CENTER);
         root.add(new JBLabel(projectSearch
                 ? "Ctrl+Enter 继续；下一步在原生窗口选择范围、文件类型，回车打开 Find 结果窗口。"
-                : "Ctrl+Enter 搜索；F3 / Shift+F3 导航。再次按查找快捷键可修改条件。"), BorderLayout.SOUTH);
+                : "Ctrl+Enter 条件搜索；Ctrl+F 保持原生查找。可从 Tools 菜单再次修改条件。"), BorderLayout.SOUTH);
         renderGroups();
         return root;
     }
@@ -180,8 +181,10 @@ public final class SearchEnhanceDialog extends DialogWrapper {
             @Override
             protected void doAction(ActionEvent event) {
                 saveDraft();
+                LOG.info("Requesting ordinary native search: projectSearch=" + projectSearch);
                 close(CANCEL_EXIT_CODE);
-                ApplicationManager.getApplication().invokeLater(nativeSearch, project.getDisposed());
+                ApplicationManager.getApplication().invokeLater(nativeSearch,
+                        ModalityState.nonModal(), project.getDisposed());
             }
         };
         return new Action[]{getOKAction(), ordinary, getCancelAction()};
