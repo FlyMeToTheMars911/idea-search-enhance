@@ -10,11 +10,13 @@ import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.zhoucb.searchenhance.ide.NativeActionSupport;
+import com.zhoucb.searchenhance.ide.NativeFindEnhancer;
+import com.zhoucb.searchenhance.settings.SearchEnhancePreferences;
 import com.zhoucb.searchenhance.ui.SearchEnhanceDialog;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * 在原生 Find in Files 动作及其现有快捷键下打开项目条件组合器。
+ * 根据设置先打开原生 Find in Files 或项目条件组合器。
  *
  * @author zhoucb50741
  * @date 2026-10-14
@@ -35,6 +37,12 @@ public final class ProjectSearchAction extends DumbAwareAction implements Overri
         Project project = event.getProject();
         if (project == null || project.isDisposed()) {
             original.actionPerformed(event);
+            return;
+        }
+        NativeFindEnhancer enhancer = NativeFindEnhancer.getInstance();
+        if (SearchEnhancePreferences.getInstance().isNativeFirst()) {
+            original.actionPerformed(event);
+            enhancer.refreshVisiblePanels(project);
             return;
         }
         Editor editor = event.getData(CommonDataKeys.EDITOR);

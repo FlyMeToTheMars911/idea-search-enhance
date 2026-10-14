@@ -1,26 +1,31 @@
 <idea-plugin require-restart="true">
     <id>com.zhoucb.searchenhance</id>
     <name>Search Enhance</name>
-    <version>1.0.1</version>
+    <version>1.0.2</version>
     <vendor>zhoucb50741</vendor>
     <description><![CDATA[
         <p>用界面组合“且、或、不包含”等同行搜索条件，无需手写正则表达式。</p>
         <p>支持完整词、顺序、行首行尾、数字、赋值、多值、方法调用及字符串场景。</p>
-        <p>Ctrl+F 保持原生查找，Ctrl+Shift+F 打开增强搜索；继续使用 IDEA 原生搜索条、
+        <p>Ctrl+F 保持原生查找，Ctrl+Shift+F 默认先打开原生搜索，可点击其中的增强搜索按钮；
+        Settings / Tools / 搜索增强可配置默认打开方式和按钮显示。继续使用 IDEA 原生搜索条、
         Find in Files 范围与文件过滤、Find 结果窗口和 F3 / Shift+F3 导航。</p>
         <p>针对 IntelliJ IDEA 2023.3.8（233.15619.7）开发，兼容范围限定为 233.*。</p>
     ]]></description>
-    <change-notes><![CDATA[1.0.1：修复普通搜索执行延迟加载动作导致窗口不打开的问题；恢复 Ctrl+F 原生查找，当前文件增强搜索移至 Tools 菜单。]]></change-notes>
+    <change-notes><![CDATA[1.0.2：原生 Find in Files 增加增强搜索按钮；支持原位回写并保留范围/文件过滤；新增 Settings / Tools / 搜索增强设置页。]]></change-notes>
     <idea-version since-build="233.15619.7" until-build="233.*"/>
     <depends>com.intellij.modules.platform</depends>
     <depends>com.intellij.modules.lang</depends>
+    <extensions defaultExtensionNs="com.intellij">
+        <applicationConfigurable parentId="tools" id="search.enhance.preferences" displayName="搜索增强"
+                instance="com.zhoucb.searchenhance.settings.SearchEnhanceConfigurable"/>
+    </extensions>
     <actions>
         <action id="SearchEnhance.FindInCurrentFile" class="com.zhoucb.searchenhance.action.CurrentFileSearchAction"
                 text="搜索增强：当前文件条件搜索…" description="组合条件后在当前文件搜索，保留原生 Ctrl+F">
             <add-to-group group-id="ToolsMenu" anchor="last"/>
         </action>
         <action id="FindInPath" class="com.zhoucb.searchenhance.action.ProjectSearchAction"
-                text="在文件中查找（增强条件）" description="组合条件后使用原生 Find in Files" overrides="true"/>
+                text="在文件中查找…" description="根据设置打开原生搜索或增强搜索" overrides="true"/>
         <action id="SearchEnhance.EditConditions" class="com.zhoucb.searchenhance.action.EditConditionsAction"
                 text="搜索增强：编辑条件…" description="打开搜索条件组合界面">
             <add-to-group group-id="ToolsMenu" anchor="last"/>

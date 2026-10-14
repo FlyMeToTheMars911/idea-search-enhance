@@ -8,7 +8,7 @@ Use -PrepareOnly to inspect the sandbox without starting a GUI process.
 .PARAMETER IdeaHome
 Installation directory of the IDEA runtime used to launch the sandbox.
 .PARAMETER PluginZip
-Plugin distribution to unpack. Defaults to the local 1.0.1 distribution.
+Plugin distribution to unpack. Defaults to the local 1.0.2 distribution.
 .PARAMETER ProjectPath
 Optional project directory to open in the independent IDEA instance.
 #>
@@ -24,7 +24,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $projectRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..')).ProviderPath
 if ([string]::IsNullOrWhiteSpace($PluginZip)) {
-    $PluginZip = Join-Path $projectRoot 'build\distributions\search-enhance-1.0.1.zip'
+    $PluginZip = Join-Path $projectRoot 'build\distributions\search-enhance-1.0.2.zip'
 }
 foreach ($requiredPath in @($IdeaHome, $PluginZip)) {
     if (-not (Test-Path -LiteralPath $requiredPath)) {

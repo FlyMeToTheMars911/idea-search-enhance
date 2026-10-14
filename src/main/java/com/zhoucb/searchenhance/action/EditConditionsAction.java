@@ -13,6 +13,7 @@ import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.zhoucb.searchenhance.ide.NativeActionSupport;
+import com.zhoucb.searchenhance.ide.NativeFindEnhancer;
 import com.zhoucb.searchenhance.ui.SearchEnhanceDialog;
 import org.jetbrains.annotations.NotNull;
 
@@ -38,6 +39,7 @@ public final class EditConditionsAction extends DumbAwareAction {
         if (project == null || project.isDisposed()) {
             return;
         }
+        NativeFindEnhancer.getInstance();
         Editor editor = event.getData(CommonDataKeys.EDITOR);
         if (!NativeActionSupport.isMainEditor(editor)) {
             editor = FileEditorManager.getInstance(project).getSelectedTextEditor();

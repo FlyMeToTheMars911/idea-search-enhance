@@ -1,5 +1,6 @@
 package com.zhoucb.searchenhance.ui;
 
+import com.intellij.find.FindModel;
 import com.intellij.openapi.actionSystem.DataContext;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ModalityState;
@@ -31,6 +32,7 @@ import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
+import java.util.function.BiConsumer;
 
 /**
  * Visual builder for literal, same-line search conditions and alternatives.
@@ -52,6 +54,8 @@ public final class SearchEnhanceDialog extends DialogWrapper {
     private final DataContext dataContext;
     /** Native action fallback. */
     private final Runnable nativeSearch;
+    /** Optional in-place submission into an already open native Find in Files panel. */
+    private final BiConsumer<String, Boolean> nativeSubmission;
     /** Mutable, dialog-local copy of the last search draft. */
     private final SearchState draft;
     /** Group selector. */
@@ -79,13 +83,41 @@ public final class SearchEnhanceDialog extends DialogWrapper {
     public SearchEnhanceDialog(@NotNull Project project, @Nullable Editor editor,
                                boolean projectSearch, @NotNull DataContext dataContext,
                                @NotNull Runnable nativeSearch) {
+        this(project, editor, projectSearch, dataContext, nativeSearch, null, null);
+    }
+
+    /**
+     * Params: project, editor, projectSearch, dataContext - original context;
+     * nativeSearch - ordinary-mode focus callback; nativeModel - current native
+     * options; nativeSubmission - optional in-place query update callback.
+     * Returns: a ready-to-show condition dialog preserving its native search owner.
+     */
+    public SearchEnhanceDialog(@NotNull Project project, @Nullable Editor editor,
+                               boolean projectSearch, @NotNull DataContext dataContext,
+                               @NotNull Runnable nativeSearch, @Nullable FindModel nativeModel,
+                               @Nullable BiConsumer<String, Boolean> nativeSubmission) {
         super(project, true);
         this.project = project;
         this.editor = editor;
         this.projectSearch = projectSearch;
         this.dataContext = dataContext;
         this.nativeSearch = nativeSearch;
+        this.nativeSubmission = nativeSubmission;
         this.draft = copyState(SearchSettings.getInstance(project).getState());
+        if (nativeModel != null) {
+            draft.caseSensitive = nativeModel.isCaseSensitive();
+            String nativeText = nativeModel.getStringToFind();
+            if (!nativeModel.isRegularExpressions() && !nativeText.isBlank()) {
+                GroupState imported = new GroupState();
+                RowState row = new RowState();
+                row.first = nativeText;
+                row.wholeWord = nativeModel.isWholeWordsOnly();
+                imported.rows.add(row);
+                draft.groups.clear();
+                draft.groups.add(imported);
+                draft.selectedGroup = 0;
+            }
+        }
         if (draft.groups.isEmpty()) {
             GroupState initial = new GroupState();
             RowState row = new RowState();
@@ -100,7 +132,8 @@ public final class SearchEnhanceDialog extends DialogWrapper {
         }
         selectedGroup = Math.max(0, Math.min(draft.selectedGroup, draft.groups.size() - 1));
         setTitle(projectSearch ? "搜索增强 · 在文件中查找" : "搜索增强 · 当前文件");
-        setOKButtonText(projectSearch ? "继续到原生 Find in Files" : "在当前文件搜索");
+        setOKButtonText(nativeSubmission != null ? "应用到原生搜索" :
+                projectSearch ? "继续到原生 Find in Files" : "在当前文件搜索");
         setCancelButtonText("取消");
         init();
     }
@@ -216,6 +249,11 @@ public final class SearchEnhanceDialog extends DialogWrapper {
             saveDraft();
             LOG.info("Condition search accepted: groups=" + query.getGroups().size()
                     + ", projectSearch=" + projectSearch);
+            if (nativeSubmission != null) {
+                nativeSubmission.accept(regex, query.isCaseSensitive());
+                super.doOKAction();
+                return;
+            }
             super.doOKAction();
             ApplicationManager.getApplication().invokeLater(() -> NativeSearchBridge.open(
                     project, editor, projectSearch, dataContext, regex, query.isCaseSensitive()), project.getDisposed());

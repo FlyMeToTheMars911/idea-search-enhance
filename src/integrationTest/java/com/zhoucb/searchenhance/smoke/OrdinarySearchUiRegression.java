@@ -29,6 +29,7 @@ import com.intellij.openapi.wm.impl.IdeFrameImpl;
 import com.intellij.openapi.wm.impl.ProjectFrameHelper;
 import com.intellij.openapi.wm.impl.WindowManagerImpl;
 import com.zhoucb.searchenhance.ui.SearchEnhanceDialog;
+import com.zhoucb.searchenhance.settings.SearchEnhancePreferences;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -85,6 +86,9 @@ final class OrdinarySearchUiRegression {
      */
     static void run(Path directory, List<String> report, List<Throwable> failures) {
         Project project = null;
+        SearchEnhancePreferences preferences = SearchEnhancePreferences.getInstance();
+        boolean originalNativeFirst = preferences.getState().nativeFirst;
+        boolean originalShowButton = preferences.getState().showNativeButton;
         AtomicReference<OrdinarySearchUiRegression> ownedFixture = new AtomicReference<>();
         try {
             Path fixtureDirectory = directory.resolve("ordinary-search-project");
@@ -112,6 +116,10 @@ final class OrdinarySearchUiRegression {
                     ((WindowManagerImpl) WindowManager.getInstance()).assignFrame(
                             regression.frameHelper, regression.project, continuation));
             ApplicationManager.getApplication().invokeAndWait(() -> regression.frame.setVisible(true));
+            ApplicationManager.getApplication().invokeAndWait(() -> {
+                preferences.getState().nativeFirst = false;
+                preferences.getState().showNativeButton = true;
+            });
             String currentFileId = SearchEnhanceSmokeStarter.isLegacyBaseline()
                     ? "Find" : "SearchEnhance.FindInCurrentFile";
             regression.check("Current-file/editor ordinary-search button", currentFileId, true, false, failures);
@@ -121,10 +129,17 @@ final class OrdinarySearchUiRegression {
             regression.check("FindInPath/project-tree without editor", "FindInPath", false, true, failures);
             regression.check("Tools/project-tree without editor", "SearchEnhance.EditConditions", false,
                     true, failures);
+            ApplicationManager.getApplication().invokeAndWait(() -> {
+                preferences.getState().nativeFirst = originalNativeFirst;
+                preferences.getState().showNativeButton = originalShowButton;
+            });
+            NativeFirstUiRegression.run(regression, directory, report, failures);
         } catch (Throwable failure) {
             report.add("FAIL: ordinary-search UI fixture: " + failure);
             failures.add(failure);
         } finally {
+            preferences.getState().nativeFirst = originalNativeFirst;
+            preferences.getState().showNativeButton = originalShowButton;
             OrdinarySearchUiRegression regression = ownedFixture.get();
             if (regression != null) {
                 ApplicationManager.getApplication().invokeAndWait(() -> {
@@ -158,32 +173,8 @@ final class OrdinarySearchUiRegression {
         long started = System.nanoTime();
         try {
             ApplicationManager.getApplication().invokeAndWait(() -> {
-                FileEditorManager files = FileEditorManager.getInstance(project);
-                clearNativeUi();
-                for (VirtualFile open : files.getOpenFiles()) {
-                    files.closeFile(open);
-                }
-                releaseEditor();
-                Editor editor = editorContext ? EditorFactory.getInstance().createEditor(
-                        EditorFactory.getInstance().createDocument("alpha beta\nalpha only\nbeta alpha\n"),
-                        project, EditorKind.MAIN_EDITOR) : null;
-                ownedEditor = editor;
-                frame.getContentPane().removeAll();
-                if (editor != null) {
-                    frame.getContentPane().add(editor.getComponent());
-                }
-                frame.getContentPane().validate();
-                frame.toFront();
-                require(!editorContext || editor != null, "Native file editor must open for " + name);
-                require(editorContext || files.getSelectedTextEditor() == null,
-                        "Project-tree case must have no selected editor");
-                Component component = editor == null ? frame.getRootPane() : editor.getContentComponent();
-                require(component != null && component.isShowing(), "Real project component must show");
-                DataContext context = SimpleDataContext.builder()
-                        .add(CommonDataKeys.PROJECT, project)
-                        .add(CommonDataKeys.EDITOR, editor)
-                        .add(CommonDataKeys.VIRTUAL_FILE, editor == null ? sample.getParent() : sample)
-                        .add(PlatformCoreDataKeys.CONTEXT_COMPONENT, component).build();
+                DataContext context = prepareContext(editorContext);
+                Editor editor = ownedEditor;
                 AnAction action = ActionManager.getInstance().getAction(id);
                 require(action != null, "Registered action missing: " + id);
                 Timer poll = new Timer(POLL_MILLIS, event -> {
@@ -206,7 +197,7 @@ final class OrdinarySearchUiRegression {
                             }
                             observedPopup.set(findNativePopup() != null);
                             observedFindUi.set(nativeFindUi() instanceof FindPopupPanel);
-                            boolean nativeVisible = projectSearch ? observedFindUi.get()
+                            boolean nativeVisible = projectSearch ? observedPopup.get()
                                     : observedSession.get() != null
                                     && observedSession.get().getComponent().isShowing();
                             if (nativeVisible) {
@@ -277,7 +268,7 @@ final class OrdinarySearchUiRegression {
     }
 
     /** Params: none. Returns: the native helper's actual FindUI object, never a test replacement. */
-    private Object nativeFindUi() {
+    Object nativeFindUi() {
         Object helper = nativeHelper();
         return helper == null ? null : readField(helper, "myUI");
     }
@@ -288,7 +279,7 @@ final class OrdinarySearchUiRegression {
     }
 
     /** Params: none. Returns: nothing; clears only this sandbox fixture's prior native find UI. */
-    private void clearNativeUi() {
+    void clearNativeUi() {
         FindManager.getInstance(project).closeFindDialog();
         Object helper = nativeHelper();
         if (helper instanceof Disposable disposable && !Disposer.isDisposed(disposable)) {
@@ -297,7 +288,7 @@ final class OrdinarySearchUiRegression {
     }
 
     /** Params: owner, name - pinned IDEA 233 native field. Returns: the observed platform object. */
-    private static Object readField(Object owner, String name) {
+    static Object readField(Object owner, String name) {
         try {
             Field field = owner.getClass().getDeclaredField(name);
             field.setAccessible(true);
@@ -320,7 +311,7 @@ final class OrdinarySearchUiRegression {
     }
 
     /** Params: none. Returns: the real enhanced modal dialog, if displayed. */
-    private static SearchEnhanceDialog findEnhancedDialog() {
+    static SearchEnhanceDialog findEnhancedDialog() {
         for (Window window : Window.getWindows()) {
             if (window.isShowing()) {
                 DialogWrapper wrapper = DialogWrapper.findInstance(window);
@@ -333,7 +324,7 @@ final class OrdinarySearchUiRegression {
     }
 
     /** Params: none. Returns: IDEA's visible native project search component. */
-    private static FindPopupPanel findNativePopup() {
+    static FindPopupPanel findNativePopup() {
         for (Window window : Window.getWindows()) {
             FindPopupPanel popup = findPopup(window);
             if (popup != null && popup.isShowing()) {
@@ -360,7 +351,7 @@ final class OrdinarySearchUiRegression {
     }
 
     /** Params: component, text - Swing subtree and exact button caption. Returns: that button. */
-    private static JButton findButton(Component component, String text) {
+    static JButton findButton(Component component, String text) {
         if (component instanceof JButton button && text.equals(button.getText())) {
             return button;
         }
@@ -373,6 +364,36 @@ final class OrdinarySearchUiRegression {
             }
         }
         return null;
+    }
+
+    /** Params: none. Returns: the isolated unopened test project registered to a native IDEA frame. */
+    Project project() { return project; }
+
+    /** Params: editorContext - whether a main editor should be present. Returns: a real shown action context. */
+    DataContext prepareContext(boolean editorContext) {
+        FileEditorManager files = FileEditorManager.getInstance(project);
+        clearNativeUi();
+        for (VirtualFile open : files.getOpenFiles()) {
+            files.closeFile(open);
+        }
+        releaseEditor();
+        ownedEditor = editorContext ? EditorFactory.getInstance().createEditor(
+                EditorFactory.getInstance().createDocument("alpha beta\nalpha only\nbeta alpha\n"),
+                project, EditorKind.MAIN_EDITOR) : null;
+        frame.getContentPane().removeAll();
+        if (ownedEditor != null) {
+            frame.getContentPane().add(ownedEditor.getComponent());
+        }
+        frame.getContentPane().validate();
+        frame.toFront();
+        require(editorContext || files.getSelectedTextEditor() == null,
+                "Project-tree case must have no selected editor");
+        Component component = ownedEditor == null ? frame.getRootPane() : ownedEditor.getContentComponent();
+        require(component.isShowing(), "Real project component must show");
+        return SimpleDataContext.builder()
+                .add(CommonDataKeys.PROJECT, project).add(CommonDataKeys.EDITOR, ownedEditor)
+                .add(CommonDataKeys.VIRTUAL_FILE, ownedEditor == null ? sample.getParent() : sample)
+                .add(PlatformCoreDataKeys.CONTEXT_COMPONENT, component).build();
     }
 
     /** Params: condition, message - UI assertion. Returns: nothing unless it fails. */

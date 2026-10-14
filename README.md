@@ -4,7 +4,7 @@
 
 ## 安装
 
-1. 构建后取得 `build/distributions/search-enhance-1.0.1.zip`，不需要解压。
+1. 构建后取得 `build/distributions/search-enhance-1.0.2.zip`，不需要解压。
 2. IDEA：`Settings → Plugins → 齿轮 → Install Plugin from Disk…`，选择 ZIP。
 3. 重启 IDEA。
 
@@ -13,16 +13,33 @@
 ## 使用
 
 - **Ctrl+F**：保持 IDEA 原生当前文件查找，直接打开原生查找条。
-- **Ctrl+Shift+F**：组合条件后进入原生 **Find in Files**，继续选择 Project、Module、Directory、Scope、File mask，回车打开原生 **Find** 结果窗口。
+- **Ctrl+Shift+F**：默认直接打开原生 **Find in Files**；点击窗口中的 **增强搜索…** 才进入条件组合。确认后回写当前原生窗口，保留 Scope、Directory、File mask，再回车打开原生 **Find** 结果窗口。
 - **F3 / Shift+F3**：保持 IDEA 原生的下一处／上一处导航。
 - 条件编辑器内 **Ctrl+Enter** 确认搜索，多值输入框中 Enter 换行。
 - `Tools → 搜索增强：当前文件条件搜索…`：在当前文件组合条件，不绑定 Ctrl+F。
 - `Tools → 搜索增强：编辑条件…`：有主编辑器时编辑当前文件条件，否则编辑项目搜索条件。
 - **普通搜索…**：临时进入原来普通的 IDEA 查找，不需要卸载插件。
 
-插件仅覆盖原生 `FindInPath` 动作，沿用其已有快捷键，包括用户自定义 Keymap。`Find` 动作及 Ctrl+F 完全交给 IDEA。控制台、单行输入框等不适用的上下文继续执行原生动作。卸载或禁用插件并重启后恢复所有原生动作。
+插件通过 `FindInPath` 动作读取默认入口偏好，沿用其已有快捷键，包括用户自定义 Keymap。`Find` 动作及 Ctrl+F 完全交给 IDEA。卸载或禁用插件并重启后恢复所有原生动作。
 
 1.0.1 修复了“普通搜索…”可能执行 IDEA 延迟加载动作占位对象而不打开窗口的问题；升级时在 Plugins 中从磁盘安装新版 ZIP 并重启。修复依据和变更清单见 [修复记录](docs/FIX_1.0.1.md)。
+
+### 设置
+
+打开 **Settings → Tools → 搜索增强**：
+
+- **Ctrl+Shift+F 默认打开**：选择“先打开 IDEA 原生搜索窗口”（默认），或“直接打开增强条件窗口”。
+- **在原生 Find in Files 窗口显示“增强搜索…”按钮**：默认勾选，可取消以保留纯原生窗口。
+
+设置适用于所有项目，应用后在下次打开搜索窗口时生效。Ctrl+F 始终为原生当前文件查找。入口偏好保存在 IDEA 用户配置 `options/SearchEnhancePreferences.xml` 中，搜索条件草稿仍按项目独立保存。
+
+从原生窗口切换到增强模式时，当前普通文本会作为一个文本条件带入；确认后更新原生查询，取消或点击“普通搜索…”则返回原窗口。原生已有正则不会自动反向解析为条件组。
+
+1.0.2 的界面流程、设置项和验证记录见 [功能说明](docs/FEATURE_1.0.2.md)。
+
+![IDEA 2023.3.8 原生搜索窗口中的增强入口](docs/images/native-search.png)
+
+![Settings → Tools → 搜索增强](docs/images/settings.png)
 
 ### 组合规则
 
@@ -83,7 +100,7 @@
 .\scripts\smoke-test.ps1
 ```
 
-它使用单独的测试插件在独立 IDEA 233 进程内检查动作覆盖、快捷键、原生查找、14 种真实 Swing 条件编辑器和原生查找条复用，生成离屏界面截图及报告后退出。测试入口不包含在正式安装包中。
+它使用单独的测试插件在独立 IDEA 233 进程内检查动作覆盖、快捷键、原生查找、14 种真实 Swing 条件编辑器、原生按钮往返、范围/文件过滤保留和设置页注册，生成界面截图及报告后退出。测试入口不包含在正式安装包中。
 
 ## 实现及边界
 
@@ -100,4 +117,4 @@
 
 实现参考：[JetBrains 233 原生项目搜索入口](https://github.com/JetBrains/intellij-community/blob/idea/233.15619.7/platform/lang-impl/src/com/intellij/find/findInProject/FindInProjectManager.java)、[233 原生编辑器查找条](https://github.com/JetBrains/intellij-community/blob/idea/233.15619.7/platform/lang-impl/src/com/intellij/find/EditorSearchSession.java)。
 
-开发变更分类见 [CHANGE_REVIEW.md](docs/CHANGE_REVIEW.md)，实际验证结果见 [VALIDATION.md](docs/VALIDATION.md)。
+开发变更分类见 [CHANGE_REVIEW.md](docs/CHANGE_REVIEW.md)，1.0.2 验证结果见 [FEATURE_1.0.2.md](docs/FEATURE_1.0.2.md)，首次交付记录见 [VALIDATION.md](docs/VALIDATION.md)。

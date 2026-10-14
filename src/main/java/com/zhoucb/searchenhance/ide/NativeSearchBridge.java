@@ -67,8 +67,10 @@ public final class NativeSearchBridge {
         model.setGlobal(true);
 
         if (projectSearch) {
+            NativeFindEnhancer.getInstance();
             LOG.info("Opening native Find in Files with a generated condition query");
             FindInProjectManager.getInstance(project).findInProject(dataContext, model);
+            NativeFindEnhancer.getInstance().refreshVisiblePanels(project);
             return;
         }
         if (editor == null || editor.isDisposed()) {
